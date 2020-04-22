@@ -15,7 +15,7 @@ def gradient_descent(X, Y, w, learning_rate=1e-6):
         w = w - learning_rate * x.T.dot(e)
     return w
 
-
+#test
 solutionVar = 0
 
 row_size = 5000
