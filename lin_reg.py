@@ -6,17 +6,14 @@ from sklearn.preprocessing import StandardScaler
 
 
 def gradient_descent(X, Y, w, learning_rate=1e-6):
-    x = np.asarray(np.asmatrix(X))
-    y = np.asarray(Y)
-    w = np.asarray(w)
     for i in range(1000):
-        y_pred = x.dot(w)
-        e = y_pred - y
-        w = w - learning_rate * x.T.dot(e)
+        y_pred = X.dot(w)
+        e = y_pred - Y
+        w = w - learning_rate * X.T.dot(e)
     return w
 
 #test
-solutionVar = 0
+solutionVar = 1
 
 row_size = 5000
 common_column_size = 54
@@ -33,23 +30,30 @@ columns_name = []
 for i in range(0, common_column_size):
     columns_name.append(i)
 dataset = pd.read_csv('Features_Variant_1.csv', names=columns_name)
-dataset = pd.DataFrame(StandardScaler().fit_transform(dataset))
+dataset = dataset.sample(frac=1)
+
+row_count = dataset.shape[0]
+dataset_feature = dataset.iloc[0: row_count, 0: feature_column_size].values
+dataset_target = np.asarray(dataset.iloc[0: row_count, feature_column_size])
+
+dataset_feature = np.asarray(np.asmatrix(pd.DataFrame(StandardScaler().fit_transform(dataset_feature))))
+dataset_feature = np.hstack((dataset_feature, np.ones((row_count, 1))))
 
 for i in range(0, row_size, step):
     next_i = i + step
 
-    target_test = dataset.iloc[i: next_i, feature_column_size].to_numpy()
-    feature_test = dataset.iloc[i: next_i, 0: feature_column_size]
+    target_test = dataset_target[i: next_i]
+    feature_test = dataset_feature[i: next_i, 0: common_column_size]
 
-    target_train = dataset.iloc[np.r_[0: i, next_i: row_size], feature_column_size].to_numpy()
-    feature_train = dataset.iloc[np.r_[0: i, next_i: row_size], 0: feature_column_size]
+    target_train = dataset_target[np.r_[0: i, next_i: row_size]]
+    feature_train = dataset_feature[np.r_[0: i, next_i: row_size], 0: common_column_size]
 
     # аналитическое решение
     if solutionVar == 0:
         m = np.linalg.lstsq(feature_train.T.dot(feature_train), feature_train.T.dot(target_train), rcond=None)[0]
     else:
         # решение через градиентный спуск
-        m = np.random.randn(feature_column_size) / np.sqrt(feature_column_size)
+        m = np.random.randn(common_column_size) / np.sqrt(common_column_size)
         m = gradient_descent(feature_train, target_train, m)
 
     y_pred = np.asarray(feature_train.dot(m))
